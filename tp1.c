@@ -2,7 +2,8 @@
     
     TP1 - AEDs 3
     Juan Victor Costa Silva Aleixo - 202050025
-    Samanta Ribeiro Freire -
+    Samanta Ribeiro Freire - 192050022
+   
 
 */
 
