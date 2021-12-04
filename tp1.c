@@ -1,132 +1,290 @@
 /*
     
-    TP1 - AEDs 3
-    Juan Victor Costa Silva Aleixo - 202050025
-    Samanta Ribeiro Freire - 192050022
+   TP1 - AEDs 3
+   Juan Victor Costa Silva Aleixo - 202050025
+   Samanta Ribeiro Freire - 192050022
    
-
 */
 
 #include <stdio.h>
 #include <stdlib.h> 
+#include <string.h>
+#define vertex int
+#define max 20
 
 typedef struct TEvento{
     char *nome;
     float p; // probabilidade
-    int timedelay;
+    int timedelay;// infeccao 1, recuperacao 5
     int time;
     int repeat; // 0 nao, 1 sim
 } Evento;
-typedef struct TVertice{
-    int id;
-    char *estado; 
-} Vertice;
-typedef struct TAresta{
-    Vertice* origem;
-    Vertice* destino;
-} Aresta;
-typedef struct TGrafo{
-  int dir;       		//0 não direcionado, 1 direcionado, -1 grafo nao criado
-  int qv;    		    //quantidade de vértices
-  Vertice vertices[20];
-  Aresta arestas[400];
-  int **matrizadj; //matriz de adjacência alocada dinamicamente
-} Grafo;
 
-Grafo* criaGrafo(int dir, int qv){
-    Grafo* g = (Grafo*) malloc(sizeof(Grafo)); 
-    g->dir = dir; 
-    g->qv = qv; 
-    //Aloca a matriz |V|x|V| 
-    g->matrizadj = (int**) malloc(qv*sizeof(int*));
-    for (int i = 0; i < qv; i++)
-        g->matrizadj[i] = (int*) malloc(qv*sizeof(int));
-    return g; 
+typedef struct TFila{
+   int qtd;
+   Evento eventos[max];
+} Fila; //criando a struct para fila de prioridade
+
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A estrutura graph representa um grafo. 
+O campo adj é um ponteiro para a matriz de adjacências do grafo. 
+O campo V contém o número de vértices e o campo A contém o número de arcos do grafo. */
+typedef struct graph {
+   int V; 
+   int A; 
+   int **adj; 
+   char eventoatual[max];
+} *Graph;
+/* Um Graph é um ponteiro para um graph, ou seja, um Graph contém o endereço de um graph. */
+
+Fila* criaFila(){
+   Fila *fp;
+   fp = (Fila*) malloc(sizeof(struct TFila));
+   if(fp != NULL)
+        fp->qtd = 0;
+    return fp;
 }
 
-void inicializaMatrizAdj(Grafo* g){
-    for (int i = 0; i < g->qv; i++) 
-        for (int j = 0; j < g->qv; j++)
-            g->matrizadj[i][j] = 0;
+void ordenarElemento(Fila* fp, int filho){
+   int pai;
+   struct TEvento aux;
+   pai = (filho-1)/2;
+   while((filho > 0) && (fp->eventos[pai].time <= fp->eventos[filho].time)){
+      aux = fp->eventos[filho];
+      fp->eventos[filho] = fp->eventos[pai];
+      fp->eventos[pai] = aux;
+      filho = pai;
+      pai = (pai-1)/2;
+   }
 }
-void criaVertice(Grafo* g, int v, char *estado){
-    g->vertices[v].estado= estado;
+
+/*
+int t - time
+int td - timedelay
+float p - probabilidade
+int r - repeat
+*/
+int insereFila(Fila* fp, char *nome, int t, int td, float p, int r){
+   if(fp == NULL)
+        return 0;
+    if(fp->qtd == max)//fila cheia
+        return 0;
+   //insere primeira posicao livre
+   strcpy(fp->eventos[fp->qtd].nome,nome);
+   fp->eventos[fp->qtd].time = t;
+   fp->eventos[fp->qtd].timedelay = td;
+   fp->eventos[fp->qtd].p = p;
+   fp->eventos[fp->qtd].repeat = r;
+
+   //desloca para a posicao correta
+   ordenarElemento(fp,fp->qtd);
+
+   //aumenta numero de elementos
+   fp->qtd++;
+   return 1;
 }
-void imprimeVertice(Grafo* g){ 
-    for (int i = 1; i <= g->qv; i++) {
-        printf("Vértice: %d - estado: %c\n",i, g->vertices[i].estado);
+
+void rebaixarElemento(Fila* fp, int pai){
+    struct TEvento aux;
+    int filho = 2 * pai + 1;
+    while(filho < fp->qtd){
+
+        if(filho < fp->qtd-1) /* verifica se tem 2 filhos */
+            if(fp->eventos[filho].time < fp->eventos[filho+1].time)
+                filho++; /*filho aponta para filho menor */
+
+        if(fp->eventos[pai].time >= fp->eventos[filho].time)
+            break; /* encontrou lugar */
+
+        aux = fp->eventos[pai];
+        fp->eventos[pai] = fp->eventos[filho];
+        fp->eventos[filho] = aux;
+
+        pai = filho;
+        filho = 2 * pai + 1;
     }
 }
-void criaAresta(Grafo* g, int u, int v, int ligacao){
-    if (u < 0 || u >= g->qv) return;
-    if (v < 0 || v >= g->qv) return;
-    g->arestas->origem->id = u;
-    g->arestas->destino->id = v;
-    if (g->dir)
-        g->matrizadj[u][v] = ligacao; 
-    else {
-        g->matrizadj[u][v] = ligacao; 
-        g->matrizadj[v][u] = ligacao; 
-    } 
+
+int removeFila(Fila* fp){
+    if(fp == NULL)
+        return 0;
+    if(fp->qtd == 0)
+        return 0;
+
+    fp->qtd--;
+    fp->eventos[0] = fp->eventos[fp->qtd];
+    rebaixarElemento(fp,0);
+    return 1;
 }
 
-void imprimeMatrizAdj(Grafo* g){
-    printf("Matriz de adjacência:\n"); 
-    for (int i = 0; i < g->qv; i++) {
-        for (int j = 0; j < g->qv; j++)
-            printf(" %d ", g->matrizadj[i][j]);
-        printf("\n");
+int estaVaziaFila(Fila* fp){
+    if(fp == NULL)
+        return -1;
+    return (fp->qtd == 0);
+}
+
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função MATRIXint() aloca uma matriz com linhas 0..r-1 e colunas 0..c-1.
+ Cada elemento da matriz recebe valor val. */
+static int **MATRIXint( int r, int c, int val) { 
+   int **m = malloc( r * sizeof (int *));
+   for (vertex i = 0; i < r; ++i) 
+      m[i] = malloc( c * sizeof (int));
+   for (vertex i = 0; i < r; ++i)
+      for (vertex j = 0; j < c; ++j)
+         m[i][j] = val;
+   return m;
+}
+
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função GRAPHinit() constrói um grafo com vértices 0 1 .. V-1 e nenhum arco. */
+Graph GRAPHinit( int V) { 
+   Graph G = malloc( sizeof *G);
+   G->V = V; 
+   G->A = 0;
+   G->adj = MATRIXint( V, V, 0);
+    for(int i = 0; i<20;i++){
+        G->eventoatual[i] = 'S';
     }
+   return G;
 }
 
-void liberaGrafo(Grafo *g){
-    for (int i = 0; i < g->qv; i++) 
-        free(g->matrizadj[i]);
-    free(g->matrizadj); 
-    free(g); 
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função GRAPHinsertArc() insere um arco v-w no grafo G. 
+A função supõe que v e w são distintos, positivos e menores que G->V. 
+Se o grafo já tem um arco v-w, a função não faz nada. */
+void GRAPHinsertArc( Graph G, vertex v, vertex w) { 
+   if (G->adj[v][w] == 0) {
+      G->adj[v][w] = 1; 
+      G->A++;
+   }
+}
+
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função GRAPHremoveArc() remove do grafo G o arco v-w. 
+A função supõe que v e w são distintos, positivos e menores que G->V. 
+Se não existe arco v-w, a função não faz nada. */
+void GRAPHremoveArc( Graph G, vertex v, vertex w) { 
+   if (G->adj[v][w] == 1) {
+      G->adj[v][w] = 0; 
+      G->A--;
+   }
+}
+
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função GRAPHshow() imprime, para cada vértice v do grafo G, em uma linha, todos os vértices adjacentes a v. */
+void GRAPHshow( Graph G) { 
+   printf("Ligacoes\n");
+   for (vertex v = 0; v < G->V; ++v) {
+      printf( "%2d:", v);
+      for (vertex w = 0; w < G->V; ++w)
+         if (G->adj[v][w] == 1) 
+            printf( " %2d", w);
+      printf( "\n");
+   }
+}
+
+/* Percorre o vetor de eventoatual para printar o valor de cada vertice, 
+o indice do vetor indica a qual vertice esse valor ta relacionado
+posicao 0 é o vertice 0, por exemplo
+*/
+void printaEvento(Graph G){
+   printf("\n");
+   for(int i = 0; i<20; i++){
+      printf("Evento: (%d) - %c\n",i,G->eventoatual[i]); 
+   }
+}
+
+/*
+Graph G - Grafo em questao
+Fila fp - Fila de prioridade
+int tempofinal - Tempo em dias da simulacao
+*/
+void simulacaoEvento(Graph G, Fila* fp, int tempofinal){
+   printf("Rodando a simulação");
+   for (int tempo; tempo <= tempofinal; tempo++){
+      Evento e = fp->eventos[0];
+      while(estaVaziaFila != -1 && e.time <= tempo){
+         //lógica para simulação
+         removeFila(fp);
+         if(e.repeat == 1){
+            e.time = tempo + e.timedelay;
+            insereFila(fp,e.nome,e.time,e.timedelay,e.p,e.repeat);   
+         }
+         e = fp->eventos[0];
+      }
+   }
+   printf("Terminou a simulacao");
 }
 
 int main(){
-    int qv, dir,v; 
-    char *estado;
-    /* printf("Qual a quantidade de vertices do grafo:\n"); 
-    scanf("%d", &qv);
-    printf("O grafo é direcionado (1) ou não (0):\n");
-    scanf("%d", &dir);
 
-    if (qv <= 0){
-        printf("Digite um valor válido para a quantidade de vertices\n");
-        exit(1); 
-    }
-    if (dir != 0 && dir != 1){
-        printf("Digite um valor válido para o tipo de grafo\n");
-        exit(1); 
-    }
+   int tempofinal = 30; // tempo em dias da simulacao
+   Fila* fp; // fila de prioridade
+   Graph grafo = GRAPHinit(20); // inicia o grafo com 20 vértices, valor padrao escolhida pela dupla
 
-    Grafo* grafo = criaGrafo(dir,qv); 
-    inicializaMatrizAdj(grafo); 
-    int u = 0, v, ligacao; 
-    while (u != -1){
-        printf("Digite os vertices de origem, destino e o peso da aresta (origem -1 para sair):\n");         
-        scanf("%d %d %d", &u, &v, &ligacao);
-        criaAresta(grafo,u,v,ligacao);         
-    }
-    imprimeMatrizAdj(grafo);*/
-    
-    dir = 0;
-    qv = 4;
-    Grafo* grafo = criaGrafo(dir,qv); 
-    printf("%d\n",grafo->qv);
-    while (v != -1){
-        printf("digite o vertice (-1 para sair)\n");
-        scanf("%d",&v);
-        printf("digite o estado desejado\n");
-        scanf("%s",&estado);
-        criaVertice(grafo,v,estado);
-    }
+   GRAPHinsertArc(grafo,0,1); 
+   GRAPHinsertArc(grafo,0,4); 
+   GRAPHinsertArc(grafo,1,0); 
+   GRAPHinsertArc(grafo,1,2);
+   GRAPHinsertArc(grafo,1,5); 
+   GRAPHinsertArc(grafo,2,1); 
+   GRAPHinsertArc(grafo,2,3); 
+   GRAPHinsertArc(grafo,2,6); 
+   GRAPHinsertArc(grafo,3,2); 
+   GRAPHinsertArc(grafo,3,7); 
+   GRAPHinsertArc(grafo,4,0); 
+   GRAPHinsertArc(grafo,4,5); 
+   GRAPHinsertArc(grafo,4,8);  
+   GRAPHinsertArc(grafo,5,1);
+   GRAPHinsertArc(grafo,5,4);
+   GRAPHinsertArc(grafo,5,6);
+   GRAPHinsertArc(grafo,5,9);
+   GRAPHinsertArc(grafo,6,2);
+   GRAPHinsertArc(grafo,6,5);
+   GRAPHinsertArc(grafo,6,7);
+   GRAPHinsertArc(grafo,6,10); 
+   GRAPHinsertArc(grafo,7,3);
+   GRAPHinsertArc(grafo,7,6);
+   GRAPHinsertArc(grafo,7,11);
+   GRAPHinsertArc(grafo,8,4);
+   GRAPHinsertArc(grafo,8,9);
+   GRAPHinsertArc(grafo,8,12);
+   GRAPHinsertArc(grafo,9,5);
+   GRAPHinsertArc(grafo,9,8);
+   GRAPHinsertArc(grafo,9,10);
+   GRAPHinsertArc(grafo,9,13);
+   GRAPHinsertArc(grafo,10,6);
+   GRAPHinsertArc(grafo,10,9);
+   GRAPHinsertArc(grafo,10,11);
+   GRAPHinsertArc(grafo,10,14);
+   GRAPHinsertArc(grafo,11,7);
+   GRAPHinsertArc(grafo,11,10);
+   GRAPHinsertArc(grafo,11,15);
+   GRAPHinsertArc(grafo,12,8);
+   GRAPHinsertArc(grafo,12,13);
+   GRAPHinsertArc(grafo,12,16);
+   GRAPHinsertArc(grafo,13,9);
+   GRAPHinsertArc(grafo,13,12);
+   GRAPHinsertArc(grafo,13,14);
+   GRAPHinsertArc(grafo,13,17);
+   GRAPHinsertArc(grafo,14,10);
+   GRAPHinsertArc(grafo,14,13);
+   GRAPHinsertArc(grafo,14,15);
+   GRAPHinsertArc(grafo,14,18);
+   GRAPHinsertArc(grafo,15,11);
+   GRAPHinsertArc(grafo,15,14);
+   GRAPHinsertArc(grafo,15,19);
+   GRAPHinsertArc(grafo,16,12);
+   GRAPHinsertArc(grafo,16,17);
+   GRAPHinsertArc(grafo,17,13);
+   GRAPHinsertArc(grafo,17,16);
+   GRAPHinsertArc(grafo,17,18);
+   GRAPHinsertArc(grafo,18,14);
+   GRAPHinsertArc(grafo,18,17);
+   GRAPHinsertArc(grafo,18,19);
+   GRAPHinsertArc(grafo,19,15);
+   GRAPHinsertArc(grafo,19,18); // associa os vértices para fazer as ligacoes desejadas
 
-    imprimeVertice(grafo);
-    liberaGrafo(grafo);
+   GRAPHshow(grafo);  
+   
+   simulacaoEvento(grafo,fp,tempofinal);
+   
+   //printaEvento(grafo);
 
-    return 0; 
+   return 0;
 }
