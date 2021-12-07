@@ -14,13 +14,6 @@
 #define vertex int
 
 
-//include "FilaPrioridadeHeap.h" //inclui os Prot�tipos
-
-// http://see-programming.blogspot.com.br/2013/05/implement-priority-queue-using-binary.html
-// constroisobe ???
-
-// http://algs4.cs.princeton.edu/24pq/
-
 typedef struct fila_prioridade FilaPrio;
 
 struct paciente{
@@ -240,17 +233,17 @@ void simulacaoEvento(Graph G, FilaPrio* fp, int tempofinal){
    for (int tempo = dt; tempo <= tempofinal; tempo+=dt){
       printf("t: (%d)\n",tempo);
       struct paciente e = fp->dados[0];
-      printf("e.time:%d\n",e.prio);
-      printf("e.nome: %s\n",e.nome);
-      printf("e.p:%f\n",e.p);
-      printf("e.repeat: %d\n",e.repeat);
-      printf("e.timedelay:%d\n",e.timedelay);
-      char *I = "I";
-      char *R = "R";
+      //printf("e.time:%d\n",e.prio);
+      //printf("e.nome: %s\n",e.nome);
+      //printf("e.p:%f\n",e.p);
+      //printf("e.repeat: %d\n",e.repeat);
+      //printf("e.timedelay:%d\n",e.timedelay);
+      //char *I = "I";
+      //char *R = "R";
       //char *EventoX = "X";
       //char *S = "S";
       printaEvento(G);
-      while(e.prio <= tempo){
+      while(e.prio < tempo){
          /* srand(time(NULL)); // para o computador gerar o numero mais aleatorio possivel, isso é, não repetir sempre os mesmos numeros gerados
          float x = rand()%10; // gerando um numero aleatorio entre 0 e 10
          float randnprob = x/10; // dividindo o numero aleatorio por 10 para chegar no valor desejado entre 0 e 1 */
@@ -263,40 +256,40 @@ void simulacaoEvento(Graph G, FilaPrio* fp, int tempofinal){
                   float randnprob = 0;
                   randnprob = x/10;  // dividindo o numero aleatorio por 10 para chegar no valor desejado entre 0 e 1
                   //printf("numero aleatorio gerado:%f, numero aleatorio predefindo: %f\n",randnprob,e.p);
-                  if((strcmp(G->eventoatual[i],R) == 0) && (strcmp(G->eventoatual[j],I) == 0) && G->adj[i][j] == 1 && (strcmp(e.nome[i],I) == 0) && e.p > randnprob ){ // (strcmp(G->eventoatual[i],R) == 0) && (strcmp(G->eventoatual[j],I) == 0) && G->adj[i][j] == 1 && (strcmp(e.nome[i],I) == 0) &&
+                  if((strcmp(G->eventoatual[i],"S") == 0) && (strcmp(G->eventoatual[j],"I") == 0) && G->adj[i][j] == 1 && (e.p > randnprob) && (strcmp(e.nome,"I") == 0)){ // (strcmp(G->eventoatual[i],R) == 0) && (strcmp(G->eventoatual[j],I) == 0) && G->adj[i][j] == 1 && (strcmp(e.nome[i],I) == 0) &&
                     G->eventoatual[i] = "I";
-                  }  
-                  if((strcmp(G->eventoatual[i],I) == 0) && (strcmp(e.nome[i],R) == 0)){ //(strcmp(G->eventoatual[i],I) == 0) && (strcmp(e.nome[i],R) == 0)
+                  } else if((strcmp(G->eventoatual[i],"I") == 0) && (strcmp(e.nome,"R") == 0) ){ //(strcmp(G->eventoatual[i],I) == 0) && (strcmp(e.nome[i],R) == 0)
                     G->eventoatual[i] = "R";
                   }  
                } 
-            }
-         
+            } 
+        
          remove_FilaPrio(fp);
          if(e.repeat == 1){
             e.prio = tempo + e.timedelay;
-            insere_FilaPrio(fp,e.nome,e.prio,e.timedelay,e.p,e.repeat);   
+            insere_FilaPrio(fp,e.nome,e.prio,e.timedelay,e.p,e.repeat);  
          }
          e = fp->dados[0];
       }
-      for(int i = 0; i<20; i++){
-         if((strcmp(G->eventoatual[i],R) == 0)){
-            contadorR++;
-         } else if((strcmp(G->eventoatual[i],I) == 0)){
-            contadorI++;
-         }
-      }
    }
-    float PorcI = contadorI/20;
-    float PorcR = contadorR/20;
+    for(int i = 0; i<20; i++){
+        if((strcmp(G->eventoatual[i],"R") == 0)){
+            contadorR++;
+        } else if((strcmp(G->eventoatual[i],"I") == 0)){
+            contadorI++;
+            }
+    }
+    float PorcI = (contadorI/0.20);
+    float PorcR = (contadorR/0.20);
     printf("Porcentagem infectados: %.2f %% \n", PorcI);
     printf("Porcentagem recuperados: %.2f %%\n", PorcR);
     printf("Terminou a simulacao\n");
+
 } 
 
 int main(){
-    struct paciente itens[2] = {{"I",1,1,0.4,1},
-                                {"R",5,5,0.3,1}};
+    struct paciente itens[2] = {{"I",1,1,0.7,1},
+                                {"R",5,5,0.4,1}};
     int tempofinal = 30; // tempo em dias da simulacao
     FilaPrio* fp;
     fp = cria_FilaPrio();
@@ -365,6 +358,7 @@ int main(){
     GRAPHinsertArc(grafo,19,15);
     GRAPHinsertArc(grafo,19,18); // associa os vértices para fazer as ligacoes desejadas
 
+    grafo->eventoatual[10] = "I";
     GRAPHshow(grafo); 
 
     int i;
@@ -374,7 +368,6 @@ int main(){
     }
 
     printf("=================================\n");
-
 
     simulacaoEvento(grafo,fp,tempofinal);
     
