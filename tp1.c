@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h> 
 #include <string.h>
+#include <time.h>
+#include <math.h>
 #define vertex int
 #define max 20
 
@@ -168,7 +170,7 @@ void GRAPHremoveArc( Graph G, vertex v, vertex w) {
 
 /* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função GRAPHshow() imprime, para cada vértice v do grafo G, em uma linha, todos os vértices adjacentes a v. */
 void GRAPHshow( Graph G) { 
-   printf("Ligacoes\n");
+   printf("Ligacoes dos vertices do grafo:\n");
    for (vertex v = 0; v < G->V; ++v) {
       printf( "%2d:", v);
       for (vertex w = 0; w < G->V; ++w)
@@ -195,11 +197,48 @@ Fila fp - Fila de prioridade
 int tempofinal - Tempo em dias da simulacao
 */
 void simulacaoEvento(Graph G, Fila* fp, int tempofinal){
-   printf("Rodando a simulação");
-   for (int tempo; tempo <= tempofinal; tempo++){
+   printf("Rodando a simulacao\n");
+   int contadorR = 0, contadorI=0;
+   int dt=1;
+   for (int tempo = dt; tempo <= tempofinal; tempo+=dt){
+      printf("t: (%d)\n",tempo);
       Evento e = fp->eventos[0];
-      while(estaVaziaFila != -1 && e.time <= tempo){
-         //lógica para simulação
+      printf("e.time:%d\n",e.time);
+      printf("e.nome: %s\n",e.nome);
+      printf("e.p:%f\n",e.p);
+      printf("e.repeat: %d\n",e.repeat);
+      printf("e.timedelay:%d\n",e.timedelay);
+      char *I = "I";
+      char *R = "R";
+      char *S = "S";
+      while(e.time <= tempo){
+         /* srand(time(NULL)); // para o computador gerar o numero mais aleatorio possivel, isso é, não repetir sempre os mesmos numeros gerados
+         float x = rand()%10; // gerando um numero aleatorio entre 0 e 10
+         float randnprob = x/10; // dividindo o numero aleatorio por 10 para chegar no valor desejado entre 0 e 1 */
+            for(int i = 0 ; i<20; i++){
+               for(int j = 0; j<20; j++){ 
+                  printf("ola\n"); 
+                  srand(time(NULL)); // para o computador gerar o numero mais aleatorio possivel, isso é, não repetir sempre os mesmos numeros gerados
+                  float x = 0;
+                  x = rand()%10; // gerando um numero aleatorio entre 0 e 10
+                  float randnprob = 0;
+                  randnprob = x/10;  // dividindo o numero aleatorio por 10 para chegar no valor desejado entre 0 e 1
+                  printf("numero aleatorio gerado:%f, numero aleatorio predefindo: %f\n",randnprob,e.p);
+                  if(randnprob > e.p ){ // (strcmp(G->eventoatual[i],R) == 0) && (strcmp(G->eventoatual[j],I) == 0) && G->adj[i][j] == 1 && (strcmp(e.nome[i],I) == 0) &&
+                     char *EventoX;
+                     EventoX = G->eventoatual[i];
+                     strcpy(EventoX,I);
+                     printaEvento(G);
+                  }  
+                  if(randnprob < e.p){ //(strcmp(G->eventoatual[i],I) == 0) && (strcmp(e.nome[i],R) == 0)
+                     char *EventoX;
+                     EventoX = G->eventoatual[i];
+                     strcpy(EventoX,R);
+                     printaEvento(G);
+                  }  
+               } 
+            }
+         
          removeFila(fp);
          if(e.repeat == 1){
             e.time = tempo + e.timedelay;
@@ -207,15 +246,43 @@ void simulacaoEvento(Graph G, Fila* fp, int tempofinal){
          }
          e = fp->eventos[0];
       }
+      for(int i = 0; i<20; i++){
+         char *EventoX;
+         EventoX = G->eventoatual[i];
+         if((strcmp(EventoX,R) == 0)){
+            contadorR++;
+         } else if((strcmp(EventoX,I) == 0)){
+            contadorI++;
+         }
+      }
+      int PorcI = contadorI/20;
+      int PorcR = contadorR/20;
+      printf("Porcentagem infectados: %f %% \n",PorcI/20);
+      printf("Porcentagem recuperados: %f %%\n",PorcR/20);
    }
-   printf("Terminou a simulacao");
+   
+   printf("Terminou a simulacao\n");
 }
+
+void imprime_FilaPrio(Fila* fp){
+    if(fp == NULL)
+        return;
+    int i;
+    for(i=0; i < fp->qtd ; i++){
+        printf("%d) Prio: %d \tNome: %s\n",i,fp->eventos[i].time,fp->eventos[i].nome);
+    }
+}
+
 
 int main(){
 
    int tempofinal = 30; // tempo em dias da simulacao
    Fila* fp; // fila de prioridade
+   fp = criaFila();
    Graph grafo = GRAPHinit(20); // inicia o grafo com 20 vértices, valor padrao escolhida pela dupla
+   char *I = "I";
+   char *R = "R";
+   char *S = "S";
 
    GRAPHinsertArc(grafo,0,1); 
    GRAPHinsertArc(grafo,0,4); 
@@ -280,11 +347,28 @@ int main(){
    GRAPHinsertArc(grafo,19,15);
    GRAPHinsertArc(grafo,19,18); // associa os vértices para fazer as ligacoes desejadas
 
-   GRAPHshow(grafo);  
+   GRAPHshow(grafo);   
+
+   Evento infec;
+   infec.nome = "I";
+   infec.p = 0.5;
+   infec.repeat=1;
+   infec.time=1;
+   infec.timedelay=1;
+
+   Evento recup;
+   recup.nome ="R";
+   recup.p = 0.4;
+   recup.repeat = 1;
+   recup.time =5;
+   recup.timedelay=5;
+
+   insereFila(fp,infec.nome,infec.time,infec.timedelay,infec.p,infec.repeat);
+   //insereFila(fp,recup.nome,recup.time,recup.timedelay,recup.p,recup.repeat);
    
+   imprime_FilaPrio(fp);
+
    simulacaoEvento(grafo,fp,tempofinal);
-   
-   //printaEvento(grafo);
 
    return 0;
 }
