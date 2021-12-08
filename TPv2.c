@@ -14,9 +14,9 @@
 #define vertex int
 
 
-typedef struct fila_prioridade FilaPrio;
+typedef struct fila_prioridade Fila;
 
-struct paciente{
+struct evento{
     char nome[30];
     int prio;
     int timedelay;
@@ -26,31 +26,31 @@ struct paciente{
 
 struct fila_prioridade{
     int qtd;
-    struct paciente dados[MAX];
+    struct evento dados[MAX];
 };
 
-FilaPrio* cria_FilaPrio(){
-    FilaPrio *fp;
-    fp = (FilaPrio*) malloc(sizeof(struct fila_prioridade));
+Fila* criaFila(){
+    Fila *fp;
+    fp = (Fila*) malloc(sizeof(struct fila_prioridade));
     if(fp != NULL)
         fp->qtd = 0;
     return fp;
 }
 
-void libera_FilaPrio(FilaPrio* fp){
+void liberaFila(Fila* fp){
     free(fp);
 }
 
-int consulta_FilaPrio(FilaPrio* fp, char* nome){
+int consultaFila(Fila* fp, char* nome){
     if(fp == NULL || fp->qtd == 0)
         return 0;
     strcpy(nome,fp->dados[0].nome);
     return 1;
 }
 
-void promoverElemento(FilaPrio* fp, int filho){
+void ordenarElemento(Fila* fp, int filho){
     int pai;
-    struct paciente temp;
+    struct evento temp;
     pai = (filho - 1) / 2;
     while((filho > 0) && (fp->dados[pai].prio >= fp->dados[filho].prio)){
         temp = fp->dados[filho];
@@ -62,7 +62,7 @@ void promoverElemento(FilaPrio* fp, int filho){
     }
 }
 
-int insere_FilaPrio(FilaPrio* fp, char *nome, int prioridade, int td, float prob, int repeat){
+int insereFila(Fila* fp, char *nome, int prioridade, int td, float prob, int repeat){
     if(fp == NULL)
         return 0;
     if(fp->qtd == MAX)//fila cheia
@@ -74,14 +74,14 @@ int insere_FilaPrio(FilaPrio* fp, char *nome, int prioridade, int td, float prob
     fp->dados[fp->qtd].p = prob;
     fp->dados[fp->qtd].repeat = repeat;
     /* desloca elemento para posi��o correta */
-    promoverElemento(fp,fp->qtd);
+    ordenarElemento(fp,fp->qtd);
     /* incrementa n�mero de elementos no heap */
     fp->qtd++;
     return 1;
 }
 
-void rebaixarElemento(FilaPrio* fp, int pai){
-    struct paciente temp;
+void rebaixarElemento(Fila* fp, int pai){
+    struct evento temp;
     int filho = 2 * pai + 1;
     while(filho < fp->qtd){
 
@@ -101,7 +101,7 @@ void rebaixarElemento(FilaPrio* fp, int pai){
     }
 }
 
-int remove_FilaPrio(FilaPrio* fp){
+int removeFila(Fila* fp){
     if(fp == NULL)
         return 0;
     if(fp->qtd == 0)
@@ -113,26 +113,26 @@ int remove_FilaPrio(FilaPrio* fp){
     return 1;
 }
 
-int tamanho_FilaPrio(FilaPrio* fp){
+int tamanhoFila(Fila* fp){
     if(fp == NULL)
         return -1;
     else
         return fp->qtd;
 }
 
-int estaCheia_FilaPrio(FilaPrio* fp){
+int estaCheiaFila(Fila* fp){
     if(fp == NULL)
         return -1;
     return (fp->qtd == MAX);
 }
 
-int estaVazia_FilaPrio(FilaPrio* fp){
+int estaVaziaFila(Fila* fp){
     if(fp == NULL)
         return -1;
     return (fp->qtd == 0);
 }
 
-void imprime_FilaPrio(FilaPrio* fp){
+void imprimeFila(Fila* fp){
     if(fp == NULL)
         return;
     int i;
@@ -154,9 +154,9 @@ typedef struct graph {
 } *Graph;
 /* Um Graph é um ponteiro para um graph, ou seja, um Graph contém o endereço de um graph. */
 
-/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função MATRIXint() aloca uma matriz com linhas 0..r-1 e colunas 0..c-1.
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função iniciaMatriz() aloca uma matriz com linhas 0..r-1 e colunas 0..c-1.
  Cada elemento da matriz recebe valor val. */
-static int **MATRIXint( int r, int c, int val) { 
+static int **iniciaMatriz( int r, int c, int val) { 
    int **m = malloc( r * sizeof (int *));
    for (vertex i = 0; i < r; ++i) 
       m[i] = malloc( c * sizeof (int));
@@ -166,40 +166,40 @@ static int **MATRIXint( int r, int c, int val) {
    return m;
 }
 
-/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função GRAPHinit() constrói um grafo com vértices 0 1 .. V-1 e nenhum arco. */
-Graph GRAPHinit( int V) { 
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função iniciaGrafo() constrói um grafo com vértices 0 1 .. V-1 e nenhum arco. */
+Graph iniciaGrafo( int V) { 
    Graph G = malloc( sizeof *G);
    G->V = V; 
    G->A = 0;
-   G->adj = MATRIXint( V, V, 0);
+   G->adj = iniciaMatriz( V, V, 0);
     for(int i = 0; i<20;i++){
         G->eventoatual[i] = "S";
     }
    return G;
 }
 
-/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função GRAPHinsertArc() insere um arco v-w no grafo G. 
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função inserirligacaoGrafo() insere um arco v-w no grafo G. 
 A função supõe que v e w são distintos, positivos e menores que G->V. 
 Se o grafo já tem um arco v-w, a função não faz nada. */
-void GRAPHinsertArc( Graph G, vertex v, vertex w) { 
+void inserirligacaoGrafo( Graph G, vertex v, vertex w) { 
    if (G->adj[v][w] == 0) {
       G->adj[v][w] = 1; 
       G->A++;
    }
 }
 
-/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função GRAPHremoveArc() remove do grafo G o arco v-w. 
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função removerligacaoGrafo() remove do grafo G o arco v-w. 
 A função supõe que v e w são distintos, positivos e menores que G->V. 
 Se não existe arco v-w, a função não faz nada. */
-void GRAPHremoveArc( Graph G, vertex v, vertex w) { 
+void removerligacaoGrafo( Graph G, vertex v, vertex w) { 
    if (G->adj[v][w] == 1) {
       G->adj[v][w] = 0; 
       G->A--;
    }
 }
 
-/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função GRAPHshow() imprime, para cada vértice v do grafo G, em uma linha, todos os vértices adjacentes a v. */
-void GRAPHshow( Graph G) { 
+/* REPRESENTAÇÃO POR MATRIZ DE ADJACÊNCIAS: A função printaGrafo() imprime, para cada vértice v do grafo G, em uma linha, todos os vértices adjacentes a v. */
+void printaGrafo( Graph G) { 
    printf("Ligacoes dos vertices do grafo:\n");
    for (vertex v = 0; v < G->V; ++v) {
       printf( "%2d:", v);
@@ -217,22 +217,23 @@ posicao 0 é o vertice 0, por exemplo
 void printaEvento(Graph G){
    printf("\n");
    for(int i = 0; i<20; i++){
-      printf("Evento: (%d) - %s\n",i,G->eventoatual[i]); 
+     printf("Evento: (%d) - %s\n",i,G->eventoatual[i]); 
    }
 }
+
 
 /*
 Graph G - Grafo em questao
 Fila fp - Fila de prioridade
 int tempofinal - Tempo em dias da simulacao
 */
-void simulacaoEvento(Graph G, FilaPrio* fp, int tempofinal){
+void simulacaoEvento(Graph G, Fila* fp, int tempofinal){
    printf("Rodando a simulacao\n");
    int contadorR = 0, contadorI=0;
    int dt=1;
    for (int tempo = dt; tempo <= tempofinal; tempo+=dt){
       printf("t: (%d)\n",tempo);
-      struct paciente e = fp->dados[0];
+      struct evento e = fp->dados[0];
       //printf("e.time:%d\n",e.prio);
       //printf("e.nome: %s\n",e.nome);
       //printf("e.p:%f\n",e.p);
@@ -242,8 +243,7 @@ void simulacaoEvento(Graph G, FilaPrio* fp, int tempofinal){
       //char *R = "R";
       //char *EventoX = "X";
       //char *S = "S";
-      printaEvento(G);
-      while(e.prio < tempo){
+      while(e.prio <= tempo){
          /* srand(time(NULL)); // para o computador gerar o numero mais aleatorio possivel, isso é, não repetir sempre os mesmos numeros gerados
          float x = rand()%10; // gerando um numero aleatorio entre 0 e 10
          float randnprob = x/10; // dividindo o numero aleatorio por 10 para chegar no valor desejado entre 0 e 1 */
@@ -258,18 +258,19 @@ void simulacaoEvento(Graph G, FilaPrio* fp, int tempofinal){
                   //printf("numero aleatorio gerado:%f, numero aleatorio predefindo: %f\n",randnprob,e.p);
                   if((strcmp(G->eventoatual[i],"S") == 0) && (strcmp(G->eventoatual[j],"I") == 0) && G->adj[i][j] == 1 && (e.p > randnprob) && (strcmp(e.nome,"I") == 0)){ // (strcmp(G->eventoatual[i],R) == 0) && (strcmp(G->eventoatual[j],I) == 0) && G->adj[i][j] == 1 && (strcmp(e.nome[i],I) == 0) &&
                     G->eventoatual[i] = "I";
-                  } else if((strcmp(G->eventoatual[i],"I") == 0) && (strcmp(e.nome,"R") == 0) ){ //(strcmp(G->eventoatual[i],I) == 0) && (strcmp(e.nome[i],R) == 0)
+                  } else if((strcmp(G->eventoatual[i],"I") == 0) && (strcmp(e.nome,"R") == 0) && (e.p > randnprob)){ //(strcmp(G->eventoatual[i],I) == 0) && (strcmp(e.nome[i],R) == 0)
                     G->eventoatual[i] = "R";
                   }  
                } 
             } 
+        printaEvento(G);
         
-         remove_FilaPrio(fp);
-         if(e.repeat == 1){
+        removeFila(fp);
+        if(e.repeat == 1){
             e.prio = tempo + e.timedelay;
-            insere_FilaPrio(fp,e.nome,e.prio,e.timedelay,e.p,e.repeat);  
-         }
-         e = fp->dados[0];
+            insereFila(fp,e.nome,e.prio,e.timedelay,e.p,e.repeat);  
+        }
+        e = fp->dados[0];
       }
    }
     for(int i = 0; i<20; i++){
@@ -288,100 +289,112 @@ void simulacaoEvento(Graph G, FilaPrio* fp, int tempofinal){
 } 
 
 int main(){
-    struct paciente itens[2] = {{"I",1,1,0.7,1},
-                                {"R",5,5,0.4,1}};
+    
+    struct evento eventos[2] = {{"I",1,1,0.70,1},
+                                {"R",5,5,0.20,1}};
     int tempofinal = 30; // tempo em dias da simulacao
-    FilaPrio* fp;
-    fp = cria_FilaPrio();
-    Graph grafo = GRAPHinit(20);
+    Fila* fp;
+    fp = criaFila();
+    Graph grafo = iniciaGrafo(20);
 
-    GRAPHinsertArc(grafo,0,1); 
-    GRAPHinsertArc(grafo,0,4); 
-    GRAPHinsertArc(grafo,1,0); 
-    GRAPHinsertArc(grafo,1,2);
-    GRAPHinsertArc(grafo,1,5); 
-    GRAPHinsertArc(grafo,2,1); 
-    GRAPHinsertArc(grafo,2,3); 
-    GRAPHinsertArc(grafo,2,6); 
-    GRAPHinsertArc(grafo,3,2); 
-    GRAPHinsertArc(grafo,3,7); 
-    GRAPHinsertArc(grafo,4,0); 
-    GRAPHinsertArc(grafo,4,5); 
-    GRAPHinsertArc(grafo,4,8);  
-    GRAPHinsertArc(grafo,5,1);
-    GRAPHinsertArc(grafo,5,4);
-    GRAPHinsertArc(grafo,5,6);
-    GRAPHinsertArc(grafo,5,9);
-    GRAPHinsertArc(grafo,6,2);
-    GRAPHinsertArc(grafo,6,5);
-    GRAPHinsertArc(grafo,6,7);
-    GRAPHinsertArc(grafo,6,10); 
-    GRAPHinsertArc(grafo,7,3);
-    GRAPHinsertArc(grafo,7,6);
-    GRAPHinsertArc(grafo,7,11);
-    GRAPHinsertArc(grafo,8,4);
-    GRAPHinsertArc(grafo,8,9);
-    GRAPHinsertArc(grafo,8,12);
-    GRAPHinsertArc(grafo,9,5);
-    GRAPHinsertArc(grafo,9,8);
-    GRAPHinsertArc(grafo,9,10);
-    GRAPHinsertArc(grafo,9,13);
-    GRAPHinsertArc(grafo,10,6);
-    GRAPHinsertArc(grafo,10,9);
-    GRAPHinsertArc(grafo,10,11);
-    GRAPHinsertArc(grafo,10,14);
-    GRAPHinsertArc(grafo,11,7);
-    GRAPHinsertArc(grafo,11,10);
-    GRAPHinsertArc(grafo,11,15);
-    GRAPHinsertArc(grafo,12,8);
-    GRAPHinsertArc(grafo,12,13);
-    GRAPHinsertArc(grafo,12,16);
-    GRAPHinsertArc(grafo,13,9);
-    GRAPHinsertArc(grafo,13,12);
-    GRAPHinsertArc(grafo,13,14);
-    GRAPHinsertArc(grafo,13,17);
-    GRAPHinsertArc(grafo,14,10);
-    GRAPHinsertArc(grafo,14,13);
-    GRAPHinsertArc(grafo,14,15);
-    GRAPHinsertArc(grafo,14,18);
-    GRAPHinsertArc(grafo,15,11);
-    GRAPHinsertArc(grafo,15,14);
-    GRAPHinsertArc(grafo,15,19);
-    GRAPHinsertArc(grafo,16,12);
-    GRAPHinsertArc(grafo,16,17);
-    GRAPHinsertArc(grafo,17,13);
-    GRAPHinsertArc(grafo,17,16);
-    GRAPHinsertArc(grafo,17,18);
-    GRAPHinsertArc(grafo,18,14);
-    GRAPHinsertArc(grafo,18,17);
-    GRAPHinsertArc(grafo,18,19);
-    GRAPHinsertArc(grafo,19,15);
-    GRAPHinsertArc(grafo,19,18); // associa os vértices para fazer as ligacoes desejadas
+    FILE *pont_arq;
+    pont_arq = fopen("resultados.txt","w");
+    
+
+    inserirligacaoGrafo(grafo,0,1); 
+    inserirligacaoGrafo(grafo,0,4); 
+    inserirligacaoGrafo(grafo,1,0); 
+    inserirligacaoGrafo(grafo,1,2);
+    inserirligacaoGrafo(grafo,1,5); 
+    inserirligacaoGrafo(grafo,2,1); 
+    inserirligacaoGrafo(grafo,2,3); 
+    inserirligacaoGrafo(grafo,2,6); 
+    inserirligacaoGrafo(grafo,3,2); 
+    inserirligacaoGrafo(grafo,3,7); 
+    inserirligacaoGrafo(grafo,4,0); 
+    inserirligacaoGrafo(grafo,4,5); 
+    inserirligacaoGrafo(grafo,4,8);  
+    inserirligacaoGrafo(grafo,5,1);
+    inserirligacaoGrafo(grafo,5,4);
+    inserirligacaoGrafo(grafo,5,6);
+    inserirligacaoGrafo(grafo,5,9);
+    inserirligacaoGrafo(grafo,6,2);
+    inserirligacaoGrafo(grafo,6,5);
+    inserirligacaoGrafo(grafo,6,7);
+    inserirligacaoGrafo(grafo,6,10); 
+    inserirligacaoGrafo(grafo,7,3);
+    inserirligacaoGrafo(grafo,7,6);
+    inserirligacaoGrafo(grafo,7,11);
+    inserirligacaoGrafo(grafo,8,4);
+    inserirligacaoGrafo(grafo,8,9);
+    inserirligacaoGrafo(grafo,8,12);
+    inserirligacaoGrafo(grafo,9,5);
+    inserirligacaoGrafo(grafo,9,8);
+    inserirligacaoGrafo(grafo,9,10);
+    inserirligacaoGrafo(grafo,9,13);
+    inserirligacaoGrafo(grafo,10,6);
+    inserirligacaoGrafo(grafo,10,9);
+    inserirligacaoGrafo(grafo,10,11);
+    inserirligacaoGrafo(grafo,10,14);
+    inserirligacaoGrafo(grafo,11,7);
+    inserirligacaoGrafo(grafo,11,10);
+    inserirligacaoGrafo(grafo,11,15);
+    inserirligacaoGrafo(grafo,12,8);
+    inserirligacaoGrafo(grafo,12,13);
+    inserirligacaoGrafo(grafo,12,16);
+    inserirligacaoGrafo(grafo,13,9);
+    inserirligacaoGrafo(grafo,13,12);
+    inserirligacaoGrafo(grafo,13,14);
+    inserirligacaoGrafo(grafo,13,17);
+    inserirligacaoGrafo(grafo,14,10);
+    inserirligacaoGrafo(grafo,14,13);
+    inserirligacaoGrafo(grafo,14,15);
+    inserirligacaoGrafo(grafo,14,18);
+    inserirligacaoGrafo(grafo,15,11);
+    inserirligacaoGrafo(grafo,15,14);
+    inserirligacaoGrafo(grafo,15,19);
+    inserirligacaoGrafo(grafo,16,12);
+    inserirligacaoGrafo(grafo,16,17);
+    inserirligacaoGrafo(grafo,17,13);
+    inserirligacaoGrafo(grafo,17,16);
+    inserirligacaoGrafo(grafo,17,18);
+    inserirligacaoGrafo(grafo,18,14);
+    inserirligacaoGrafo(grafo,18,17);
+    inserirligacaoGrafo(grafo,18,19);
+    inserirligacaoGrafo(grafo,19,15);
+    inserirligacaoGrafo(grafo,19,18); // associa os vértices para fazer as ligacoes desejadas
+
 
     grafo->eventoatual[10] = "I";
-    GRAPHshow(grafo); 
+
+    fprintf(pont_arq,"teste");
+    fclose(pont_arq);
+    
+    printaGrafo(grafo); 
 
     int i;
     for (i=0; i< 2; i++){
-        printf("%d) %d %s\n",i,itens[i].prio, itens[i].nome);
-        insere_FilaPrio(fp,itens[i].nome,itens[i].prio,itens[i].timedelay,itens[i].p,itens[i].repeat);
+        printf("%d) %d %s\n",i,eventos[i].prio, eventos[i].nome);
+        insereFila(fp,eventos[i].nome,eventos[i].prio,eventos[i].timedelay,eventos[i].p,eventos[i].repeat);
     }
 
     printf("=================================\n");
 
     simulacaoEvento(grafo,fp,tempofinal);
     
+
+
     //grafo->eventoatual[4] = "R";
     //printaEvento(grafo);
 
-    imprime_FilaPrio(fp);
+    imprimeFila(fp);
 
 
 
     printf("=================================\n");
 
-    libera_FilaPrio(fp);
+    liberaFila(fp);
 
-    system("pause");
     return 0;
+
 }
