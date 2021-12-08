@@ -18,7 +18,7 @@ typedef struct fila_prioridade Fila;
 
 struct evento{
     char nome[30];
-    int prio;
+    int time;
     int timedelay;
     float p;
     int repeat;
@@ -52,7 +52,7 @@ void ordenarElemento(Fila* fp, int filho){
     int pai;
     struct evento temp;
     pai = (filho - 1) / 2;
-    while((filho > 0) && (fp->dados[pai].prio >= fp->dados[filho].prio)){
+    while((filho > 0) && (fp->dados[pai].time >= fp->dados[filho].time)){
         temp = fp->dados[filho];
         fp->dados[filho] = fp->dados[pai];
         fp->dados[pai] = temp;
@@ -62,14 +62,14 @@ void ordenarElemento(Fila* fp, int filho){
     }
 }
 
-int insereFila(Fila* fp, char *nome, int prioridade, int td, float prob, int repeat){
+int insereFila(Fila* fp, char *nome, int time, int td, float prob, int repeat){
     if(fp == NULL)
         return 0;
     if(fp->qtd == MAX)//fila cheia
         return 0;
     /* insere na primeira posi��o livre */
     strcpy(fp->dados[fp->qtd].nome,nome);
-    fp->dados[fp->qtd].prio = prioridade;
+    fp->dados[fp->qtd].time = time;
     fp->dados[fp->qtd].timedelay = td;
     fp->dados[fp->qtd].p = prob;
     fp->dados[fp->qtd].repeat = repeat;
@@ -86,10 +86,10 @@ void rebaixarElemento(Fila* fp, int pai){
     while(filho < fp->qtd){
 
         if(filho < fp->qtd-1) /* verifica se tem 2 filhos */
-            if(fp->dados[filho].prio < fp->dados[filho+1].prio)
+            if(fp->dados[filho].time < fp->dados[filho+1].time)
                 filho++; /*filho aponta para filho menor */
 
-        if(fp->dados[pai].prio >= fp->dados[filho].prio)
+        if(fp->dados[pai].time >= fp->dados[filho].time)
             break; /* encontrou lugar */
 
         temp = fp->dados[pai];
@@ -137,7 +137,7 @@ void imprimeFila(Fila* fp){
         return;
     int i;
     for(i=0; i < fp->qtd ; i++){
-        printf("%d) Time: %d \tNome: %s",i,fp->dados[i].prio,fp->dados[i].nome);
+        printf("%d) Time: %d \tNome: %s",i,fp->dados[i].time,fp->dados[i].nome);
         printf("\tTimeDelay: %d \tProbabilidade: %f",fp->dados[i].timedelay,fp->dados[i].p);
         printf("\tRepeat: %d\n",fp->dados[i].repeat);
     }
@@ -243,10 +243,11 @@ void simulacaoEvento(Graph G, Fila* fp, int tempofinal){
       //char *R = "R";
       //char *EventoX = "X";
       //char *S = "S";
-      while(e.prio <= tempo){
+      while(e.time <= tempo){
          /* srand(time(NULL)); // para o computador gerar o numero mais aleatorio possivel, isso é, não repetir sempre os mesmos numeros gerados
          float x = rand()%10; // gerando um numero aleatorio entre 0 e 10
          float randnprob = x/10; // dividindo o numero aleatorio por 10 para chegar no valor desejado entre 0 e 1 */
+            FILE *pont_arq;
             for(int i = 0 ; i<20; i++){
                for(int j = 0; j<20; j++){ 
                   //printf("ola\n"); 
@@ -262,13 +263,15 @@ void simulacaoEvento(Graph G, Fila* fp, int tempofinal){
                     G->eventoatual[i] = "R";
                   }  
                } 
+               pont_arq = fopen("resultados.txt","w");
+               fprintf(pont_arq,G->eventoatual[i]);
             } 
         printaEvento(G);
-        
+        fclose(pont_arq);
         removeFila(fp);
         if(e.repeat == 1){
-            e.prio = tempo + e.timedelay;
-            insereFila(fp,e.nome,e.prio,e.timedelay,e.p,e.repeat);  
+            e.time = tempo + e.timedelay;
+            insereFila(fp,e.nome,e.time,e.timedelay,e.p,e.repeat);  
         }
         e = fp->dados[0];
       }
@@ -296,10 +299,6 @@ int main(){
     Fila* fp;
     fp = criaFila();
     Graph grafo = iniciaGrafo(20);
-
-    FILE *pont_arq;
-    pont_arq = fopen("resultados.txt","w");
-    
 
     inserirligacaoGrafo(grafo,0,1); 
     inserirligacaoGrafo(grafo,0,4); 
@@ -367,15 +366,13 @@ int main(){
 
     grafo->eventoatual[10] = "I";
 
-    fprintf(pont_arq,"teste");
-    fclose(pont_arq);
     
     printaGrafo(grafo); 
 
     int i;
     for (i=0; i< 2; i++){
-        printf("%d) %d %s\n",i,eventos[i].prio, eventos[i].nome);
-        insereFila(fp,eventos[i].nome,eventos[i].prio,eventos[i].timedelay,eventos[i].p,eventos[i].repeat);
+        printf("%d) %d %s\n",i,eventos[i].time, eventos[i].nome);
+        insereFila(fp,eventos[i].nome,eventos[i].time,eventos[i].timedelay,eventos[i].p,eventos[i].repeat);
     }
 
     printf("=================================\n");
